@@ -7,7 +7,7 @@ from pathlib import Path
 MODEL_PATH = "yolov8n.pt"  # 模型路径（自动下载）
 CONF_THRESHOLD = 0.5  # 置信度阈值（只显示≥0.5的目标）
 SAVE_DIR = "detection_results"  # 结果保存目录
-
+torch.serialization.add_safe_globals([ultralytics.nn.tasks.DetectionModel])
 # 自定义检测框颜色（RGB格式，可新增/修改，键为类别名，值为(R,G,B)）
 # 常见类别：person(人)、car(车)、cat(猫)、dog(狗)、bottle(瓶子)，全类别见YOLO官方文档
 CUSTOM_COLORS = {

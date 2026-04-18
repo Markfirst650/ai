@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YOLO 智能检测台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f4ec;
+      --bg-panel: rgba(255, 255, 255, 0.75);
+      --ink: #1f2a37;
+      --ink-soft: #4a5565;
+      --brand: #d45b29;
+      --brand-deep: #b14519;
+      --ok: #2f8f4e;
+      --warn: #a84622;
+      --line: rgba(31, 42, 55, 0.12);
+      --shadow: 0 20px 45px rgba(44, 34, 23, 0.16);
+      --radius-xl: 24px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Manrope", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(212, 91, 41, 0.2), transparent 32%),
+        radial-gradient(circle at 82% 80%, rgba(47, 143, 78, 0.16), transparent 28%),
+        linear-gradient(120deg, #f8f6ee 0%, #f1ebdd 38%, #efe9dd 100%);
+      padding: 28px;
+      animation: pageIn 560ms ease-out;
+    }
+
+    @keyframes pageIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .shell {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      backdrop-filter: blur(6px);
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 46px);
+      line-height: 1.1;
+      letter-spacing: 0.3px;
+      font-family: "ZCOOL XiaoWei", serif;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--ink-soft);
+      font-size: 15px;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      backdrop-filter: blur(6px);
+      animation: fadeUp 460ms ease-out both;
+    }
+
+    .panel:nth-child(2) {
+      animation-delay: 130ms;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .dropzone {
+      border: 2px dashed rgba(31, 42, 55, 0.24);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.5);
+      transition: all 220ms ease;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--brand);
+      background: rgba(212, 91, 41, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .dropzone p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 14px;
+    }
+
+    .btn-row {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button,
+    .file-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .primary {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(212, 91, 41, 0.28);
+    }
+
+    .primary:hover {
+      transform: translateY(-1px);
+      background: var(--brand-deep);
+    }
+
+    .muted {
+      background: #e6e2d7;
+      color: #2d3748;
+    }
+
+    .file-btn {
+      display: inline-flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .meta-row {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .meta-row label {
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--brand);
+      cursor: pointer;
+    }
+
+    .status {
+      margin-top: 14px;
+      min-height: 22px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      background: #f2f6ee;
+      color: var(--ok);
+    }
+
+    .status.error {
+      background: #fff1ee;
+      color: var(--warn);
+    }
+
+    .preview-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .img-box {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      min-height: 220px;
+      background: #fff;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    .img-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      background: #000;
+    }
+
+    .camera-controls {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .camera-tag {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+
+    .placeholder {
+      color: var(--ink-soft);
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+    }
+
+    .result-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .pill {
+      background: #eaf6ee;
+      color: #206c3a;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .result-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+      max-height: 410px;
+      overflow: auto;
+    }
+
+    .result-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .result-item strong {
+      font-size: 14px;
+    }
+
+    .result-item small {
+      display: block;
+      margin-top: 4px;
+      color: var(--ink-soft);
+      font-size: 12px;
+    }
+
+    @media (max-width: 960px) {
+      body {
+        padding: 16px;
+      }
+
+      .panel-grid,
+      .preview-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <h1 class="title">YOLO 智能检测台</h1>
+      <p class="subtitle">上传图片，后端自动识别并返回标注结果。当前接口：POST /detect</p>
+    </section>
+
+    <section class="panel-grid">
+      <section class="panel">
+        <h2 class="section-title">图片输入与检测</h2>
+
+        <div id="dropzone" class="dropzone">
+          <p>拖拽图片到这里，或点击“选择图片”</p>
+        </div>
+
+        <div class="btn-row">
+          <label class="file-btn" for="fileInput">选择图片</label>
+          <input id="fileInput" type="file" accept="image/*" />
+          <button id="detectBtn" class="primary">开始检测</button>
+          <button id="clearBtn" class="muted" type="button">清空</button>
+        </div>
+
+        <div class="camera-controls">
+          <button id="startCamBtn" class="muted" type="button">开启摄像头</button>
+          <button id="snapBtn" class="primary" type="button">检测当前画面</button>
+          <button id="liveBtn" class="muted" type="button">连续检测：关</button>
+          <button id="stopCamBtn" class="muted" type="button">关闭摄像头</button>
+        </div>
+
+        <div class="camera-tag">提示：连续检测会每隔一段时间抓取一帧发送到后端。</div>
+
+        <div class="meta-row">
+          <label for="confRange">置信度阈值：<span id="confValue">0.50</span></label>
+          <input id="confRange" type="range" min="0.1" max="0.95" step="0.01" value="0.5" />
+        </div>
+
+        <div id="status" class="status">准备就绪。请先选择图片。</div>
+
+        <div class="preview-wrap">
+          <div class="img-box">
+            <img id="inputImg" alt="输入图像" />
+            <video id="cameraVideo" autoplay playsinline muted></video>
+            <div id="inputPlaceholder" class="placeholder">输入预览区</div>
+          </div>
+          <div class="img-box">
+            <img id="outputImg" alt="检测结果图像" />
+            <div id="outputPlaceholder" class="placeholder">检测结果预览区</div>
+          </div>
+        </div>
+        <canvas id="captureCanvas" style="display:none"></canvas>
+      </section>
+
+      <section class="panel">
+        <div class="result-head">
+          <h2 class="section-title" style="margin:0">检测结果</h2>
+          <span id="countPill" class="pill">0 个目标</span>
+        </div>
+
+        <ul id="resultList" class="result-list"></ul>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const detectBtn = document.getElementById("detectBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const startCamBtn = document.getElementById("startCamBtn");
+    const snapBtn = document.getElementById("snapBtn");
+    const liveBtn = document.getElementById("liveBtn");
+    const stopCamBtn = document.getElementById("stopCamBtn");
+    const confRange = document.getElementById("confRange");
+    const confValue = document.getElementById("confValue");
+    const statusEl = document.getElementById("status");
+    const dropzone = document.getElementById("dropzone");
+
+    const inputImg = document.getElementById("inputImg");
+    const cameraVideo = document.getElementById("cameraVideo");
+    const captureCanvas = document.getElementById("captureCanvas");
+    const outputImg = document.getElementById("outputImg");
+    const inputPlaceholder = document.getElementById("inputPlaceholder");
+    const outputPlaceholder = document.getElementById("outputPlaceholder");
+    const countPill = document.getElementById("countPill");
+    const resultList = document.getElementById("resultList");
+
+    let selectedFile = null;
+    let cameraStream = null;
+    let liveDetectTimer = null;
+    let isDetecting = false;
+
+    function setStatus(text, isError = false) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle("error", isError);
+    }
+
+    function setInputPreview(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        cameraVideo.style.display = "none";
+        inputImg.src = reader.result;
+        inputImg.style.display = "block";
+        inputPlaceholder.style.display = "none";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetOutput() {
+      outputImg.removeAttribute("src");
+      outputImg.style.display = "none";
+      outputPlaceholder.style.display = "block";
+      outputPlaceholder.textContent = "检测结果预览区";
+      countPill.textContent = "0 个目标";
+      resultList.innerHTML = "";
+    }
+
+    function renderDetections(items) {
+      resultList.innerHTML = "";
+      if (!items.length) {
+        const li = document.createElement("li");
+        li.className = "result-item";
+        li.innerHTML = "<strong>未检测到目标</strong><small>可尝试降低阈值后重试</small>";
+        resultList.appendChild(li);
+        return;
+      }
+
+      items.forEach((item, idx) => {
+        const li = document.createElement("li");
+        li.className = "result-item";
+        const box = item.box || [];
+        li.innerHTML = `
+          <strong>#${idx + 1} ${item.class_name}</strong>
+          <small>置信度：${Number(item.confidence).toFixed(4)}</small>
+          <small>坐标：[${box.join(", ")}]</small>
+        `;
+        resultList.appendChild(li);
+      });
+    }
+
+    function applyDetectResult(data) {
+      outputImg.src = `data:image/jpeg;base64,${data.image}`;
+      outputImg.style.display = "block";
+      outputPlaceholder.style.display = "none";
+
+      countPill.textContent = `${data.count || 0} 个目标`;
+      renderDetections(data.detections || []);
+    }
+
+    async function postDetect(body, isJson) {
+      const conf = Number(confRange.value).toFixed(2);
+      const options = {
+        method: "POST",
+        body,
+      };
+
+      if (isJson) {
+        options.headers = { "Content-Type": "application/json" };
+      }
+
+      const response = await fetch(`/detect?conf=${conf}`, options);
+      const data = await response.json();
+      if (!response.ok || data.status !== "success") {
+        throw new Error(data.message || "检测失败");
+      }
+      return data;
+    }
+
+    async function detectImage() {
+      if (!selectedFile) {
+        setStatus("请先选择图片后再检测。", true);
+        return;
+      }
+
+      resetOutput();
+      setStatus("正在调用后端检测，请稍候...");
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      try {
+        const data = await postDetect(formData, false);
+        applyDetectResult(data);
+
+        setStatus("检测完成。你可以继续上传下一张图片。", false);
+      } catch (err) {
+        setStatus(`检测失败：${err.message}`, true);
+      }
+    }
+
+    async function startCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus("当前浏览器不支持摄像头调用。", true);
+        return;
+      }
+
+      if (cameraStream) {
+        setStatus("摄像头已开启。", false);
+        return;
+      }
+
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false,
+        });
+        cameraVideo.srcObject = cameraStream;
+        cameraVideo.style.display = "block";
+        inputImg.style.display = "none";
+        inputPlaceholder.style.display = "none";
+        setStatus("摄像头已开启，可单帧检测或连续检测。", false);
+      } catch (err) {
+        setStatus(`摄像头开启失败：${err.message}`, true);
+      }
+    }
+
+    function stopCamera() {
+      if (liveDetectTimer) {
+        clearInterval(liveDetectTimer);
+        liveDetectTimer = null;
+      }
+      liveBtn.textContent = "连续检测：关";
+
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+      }
+
+      cameraVideo.srcObject = null;
+      cameraVideo.style.display = "none";
+
+      if (selectedFile) {
+        inputImg.style.display = "block";
+        inputPlaceholder.style.display = "none";
+      } else {
+        inputPlaceholder.style.display = "block";
+        inputPlaceholder.textContent = "输入预览区";
+      }
+    }
+
+    function captureCurrentFrame() {
+      if (!cameraStream || cameraVideo.videoWidth === 0 || cameraVideo.videoHeight === 0) {
+        return null;
+      }
+
+      captureCanvas.width = cameraVideo.videoWidth;
+      captureCanvas.height = cameraVideo.videoHeight;
+      const ctx = captureCanvas.getContext("2d");
+      ctx.drawImage(cameraVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+      return captureCanvas.toDataURL("image/jpeg", 0.9);
+    }
+
+    async function detectCurrentFrame() {
+      if (isDetecting) {
+        return;
+      }
+      if (!cameraStream) {
+        setStatus("请先开启摄像头。", true);
+        return;
+      }
+
+      const frameDataUrl = captureCurrentFrame();
+      if (!frameDataUrl) {
+        setStatus("尚未获取到摄像头画面，请稍后再试。", true);
+        return;
+      }
+
+      isDetecting = true;
+      setStatus("正在检测摄像头当前画面...", false);
+      try {
+        const data = await postDetect(JSON.stringify({ image: frameDataUrl }), true);
+        applyDetectResult(data);
+        setStatus("摄像头画面检测完成。", false);
+      } catch (err) {
+        setStatus(`摄像头检测失败：${err.message}`, true);
+      } finally {
+        isDetecting = false;
+      }
+    }
+
+    function toggleLiveDetect() {
+      if (!cameraStream) {
+        setStatus("请先开启摄像头再启用连续检测。", true);
+        return;
+      }
+
+      if (liveDetectTimer) {
+        clearInterval(liveDetectTimer);
+        liveDetectTimer = null;
+        liveBtn.textContent = "连续检测：关";
+        setStatus("已关闭连续检测。", false);
+        return;
+      }
+
+      liveBtn.textContent = "连续检测：开";
+      setStatus("连续检测已开启。", false);
+      liveDetectTimer = setInterval(() => {
+        detectCurrentFrame();
+      }, 1200);
+    }
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) {
+        return;
+      }
+      selectedFile = file;
+      setInputPreview(file);
+      resetOutput();
+      setStatus(`已选择：${file.name}`);
+    });
+
+    confRange.addEventListener("input", () => {
+      confValue.textContent = Number(confRange.value).toFixed(2);
+    });
+
+    detectBtn.addEventListener("click", detectImage);
+    startCamBtn.addEventListener("click", startCamera);
+    stopCamBtn.addEventListener("click", () => {
+      stopCamera();
+      setStatus("摄像头已关闭。", false);
+    });
+    snapBtn.addEventListener("click", detectCurrentFrame);
+    liveBtn.addEventListener("click", toggleLiveDetect);
+
+    clearBtn.addEventListener("click", () => {
+      selectedFile = null;
+      fileInput.value = "";
+      inputImg.removeAttribute("src");
+      inputImg.style.display = "none";
+      inputPlaceholder.style.display = "block";
+      inputPlaceholder.textContent = "输入预览区";
+      resetOutput();
+      setStatus("已清空。请重新选择图片。", false);
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove("dragover");
+      });
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || !files.length) {
+        return;
+      }
+      const file = files[0];
+      if (!file.type.startsWith("image/")) {
+        setStatus("仅支持图片文件。", true);
+        return;
+      }
+
+      selectedFile = file;
+      setInputPreview(file);
+      resetOutput();
+      setStatus(`已拖入：${file.name}`);
+    });
+
+    window.addEventListener("beforeunload", () => {
+      stopCamera();
+    });
+  </script>
+</body>
+</html>

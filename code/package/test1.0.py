@@ -1,6 +1,19 @@
 from ultralytics import YOLO
 import cv2
 import os
+import torch
+
+# 兼容 PyTorch 2.6+ 默认 weights_only=True 导致的旧权重加载失败。
+# 仅在你信任权重来源时使用该兼容逻辑（官方 yolov8n.pt 可视为可信）。
+_orig_torch_load = torch.load
+
+
+def _torch_load_compat(*args, **kwargs):
+    kwargs.setdefault("weights_only", False)
+    return _orig_torch_load(*args, **kwargs)
+
+
+torch.load = _torch_load_compat
 
 # -------------------------- 1. 配置参数（可按需修改）--------------------------
 MODEL_PATH = "yolov8n.pt"  # 模型路径（没有会自动下载）
